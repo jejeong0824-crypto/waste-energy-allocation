@@ -315,8 +315,11 @@ with tab_result:
 
         st.divider()
         if st.button("💾 결과 아카이브에 저장", type="secondary"):
-            archive.save_results(ym, results)
-            st.success(f"✅ {ym} 결과가 저장되었습니다.")
+            try:
+                archive.save_results(ym, results)
+                st.success(f"✅ {ym} 결과가 저장되었습니다.")
+            except Exception as e:
+                st.error(f"저장 실패: {e}")
 
 
 # ══════════════════════════════════════════════

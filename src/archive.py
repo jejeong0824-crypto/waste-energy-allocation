@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 import sqlite3
-import json
 import os
 from datetime import datetime
 import pandas as pd
@@ -13,6 +12,14 @@ DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'archive.db')
 def _get_conn() -> sqlite3.Connection:
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
+
+    # 스키마 마이그레이션: score 컬럼이 없으면 (구버전) 테이블 삭제 후 재생성
+    try:
+        conn.execute("SELECT score FROM allocations LIMIT 1")
+    except sqlite3.OperationalError:
+        conn.execute("DROP TABLE IF EXISTS allocations")
+        conn.commit()
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS allocations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,7 +110,6 @@ def save_results(year_month: str, cluster_results: list[dict]) -> None:
 
 
 def load_all() -> pd.DataFrame:
-    """전체 아카이브 로드."""
     conn = _get_conn()
     df = pd.read_sql("SELECT * FROM allocations ORDER BY year_month, cluster, district", conn)
     conn.close()
